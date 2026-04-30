@@ -1,0 +1,183 @@
+install.packages(c('kableExtra', 'knitr', 'dplyr', 'lmtest', 'sandwich', 'stargazer', 'fixest', 'ggplot2', 'effsize', 'corrplot'))
+
+# Import packages
+library(knitr)
+library(corrplot)
+library(dplyr)
+library(lmtest)
+library(sandwich)
+library(stargazer)
+library(fixest)
+library(ggplot2)
+library(effsize)
+library(kableExtra)
+########################################################################
+# Data pre-processing
+df <- rio::import('OFCOM.dta')
+df
+
+str(df)
+summary(df)
+head(df)
+tail(df)
+
+sum(is.na(df)) 
+colSums(is.na(df)) 
+
+df <- na.omit(df)
+
+df$male <- as.factor(df$male)
+df$child <- as.factor(df$child)
+df$married <- as.factor(df$married)
+
+df <- df[!duplicated(df), ]
+
+df$year <- as.numeric(df$year)
+df$income <- as.numeric(df$income)
+
+df <- df[, c("year", "q_conf", "p_conf", "age", "educ", "male", "married", "income", "OFCOM", "child")]
+
+df$consumption <- df$q_conf * df$p_conf
+df <- df[, !colnames(df) %in% c("q_conf", "p_conf")]
+
+df <- df %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+rio::export(df, 'OFCOM_cleaned.csv')
+
+summary(df)
+str(df)
+colnames(df)
+
+#######################################################################
+# DATA EXPLORATION
+
+# Kernel density plot 
+ggplot(df, aes(x = age)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  theme_minimal() +
+  labs(title = "Age Distribution - Density Plot", x = "Age", y = "Density")
+
+# Correlation Plot Values
+numeric_vars <- df %>% select(where(is.numeric))
+correlation_matrix <- cor(numeric_vars, use = "complete.obs")
+
+# Correlation Plot Generation
+corrplot(
+  correlation_matrix,
+  method = "circle",          
+  type = "upper",             
+  addCoef.col = "black",      
+  tl.col = "black",           
+  tl.cex = 0.8,               
+  number.cex = 0.7            
+)
+
+# Percentages of OFCOM and Non-OFCOM
+ofcom_counts <- df %>%
+  group_by(OFCOM) %>%
+  summarise(count = n()) %>%
+  mutate(percentage = count / sum(count) * 100) 
+
+# Pie chart creation
+ggplot(ofcom_counts, aes(x = "", y = count, fill = factor(OFCOM))) +
+  geom_bar(stat = "identity", width = 1) +
+  coord_polar(theta = "y") +
+  theme_minimal() +
+  labs(
+    title = "Distribution of OFCOM Observations",
+    fill = "OFCOM Status"
+  ) +
+  scale_fill_manual(values = c("red", "blue"), labels = c("Non-OFCOM", "OFCOM")) +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank()) +
+  geom_text(aes(label = paste0(round(percentage, 1), "%")), position = position_stack(vjust = 0.5))
+
+
+
+
+############################################################################
+# DiD Regression Analysis
+# Step 1: Remove rows where the dependent variable (consumption) is 0 (outlier) and log the consumption
+data <- df %>% filter(consumption > 0)
+data <- data %>% mutate(log_consumption = log(consumption))
+# Create treatment and control groups
+data <- data %>%
+  mutate(
+    treated = ifelse(age >= 16 & age <= 45 & child == 1, 1, 0) # Treatment group indicator
+  )
+# Add interaction terms for DiD regression
+data <- data %>%
+  mutate(
+    post = ifelse(OFCOM == 1, 1, 0) # Post-treatment indicator
+  )
+
+# Step 2: Run the DiD regression
+# Small model (fewer control variables)
+small_model <- lm(
+  log_consumption ~ treated:post + treated + post,
+  data = data
+)
+
+# Big model (with additional control variables)
+big_model <- lm(
+  log_consumption ~ treated:post + treated + post + age + educ + male + married + income,
+  data = data
+)
+
+# extract residuals of big model
+residuals_big_model <- residuals(big_model)
+
+# generate Q-Q plot
+qqnorm(residuals_big_model, main = "Q-Q Plot of Residuals for Big Model")
+qqline(residuals_big_model, col = "red", lwd = 2) 
+
+# Step 3: Output by LaTex
+stargazer(
+  small_model, big_model,
+  type = "latex",
+  title = "Difference-in-Differences Regression Results",
+  dep.var.labels = c("log_Consumption"),
+  column.labels = c("Small Model", "Big Model"),
+  model.numbers = FALSE,
+  star.cutoffs = c(0.05, 0.01, 0.001), # Custom significance levels for stars
+  notes.append = FALSE,                # Append a note on significance levels
+  notes = "Significance levels: * p<0.05, ** p<0.01, *** p<0.001"
+)
+########################################################################
+#Evaluation
+#equal trend
+
+data <- subset(data, subset = year > 2001 & year < 2009) 
+plot_data<-data %>%
+  mutate(treated=factor(treated,labels=c("Control","Treated")),
+         year= factor(year))
+
+plot_data=plot_data%>% group_by(treated,year)%>% 
+  summarize(mean_consumption=mean(log_consumption),
+            se_consumption= sd(log_consumption) /sqrt(n()),
+            upper=mean_consumption +(1.96 *se_consumption),
+            lower=mean_consumption +(-1.96 * se_consumption))
+
+ggplot(plot_data, aes(x=year,y=mean_consumption,color=treated))+
+  geom_smooth()+
+  geom_line(aes(group=treated))+
+  theme_minimal()
+
+#Cohen D and independent T-test
+treated_group_post <- data[data$treated == 1 & data$post == 1, "log_consumption"]
+control_group_post <- data[data$treated == 0 & data$post == 1, "log_consumption"]
+
+# 1. Independent t-test
+t_test_result <- t.test(treated_group_post, control_group_post, var.equal = TRUE)
+print("Independent t-test results:")
+print(t_test_result)
+
+# 2. Cohen's d
+cohen_d_result <- cohen.d(treated_group_post, control_group_post)
+print("Cohen's d results:")
+print(cohen_d_result)
+
+
