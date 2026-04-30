@@ -1,8 +1,10 @@
 A study into the impact of advertising restrictions on food consumption 
+
 Andrei Sandu 791981- Chiara Barontini 807411– Yanheng Li E04708 
 
   1. Problem
- Concerns about public health, particularly the link between obesity and food marketing, have been 
+
+     Concerns about public health, particularly the link between obesity and food marketing, have been 
 growing. Children are especially susceptible to developing unhealthy eating habits influenced by TV and digital 
 platforms, which contribute to obesity. Our evaluation focuses on the UK’s efforts to tackle this issue. The 
 Office of Communications (OFCOM) oversees TV and radio advertising policies in the UK. Between 2007 
@@ -14,7 +16,8 @@ Our project examines whether these restrictions were effective and how the polic
 unhealthy food consumption.
 
   2. Data
- The data used in this project is secondary data sourced from the Expenditure and Food Survey (EFS). 
+
+     The data used in this project is secondary data sourced from the Expenditure and Food Survey (EFS). 
 It was gathered from a sample of UK households over a span of 12 years, with an effort to track the same 
 families each year (longitudinal data). The dataset includes self-reported purchases of HFSS foods recorded 
 over two weeks. It comprises 29 variables and 74,117 observations. Key variables of interest include:  
@@ -30,7 +33,8 @@ confectionery, while the main predictor is the treatment variable (OFCOM) and it
 variable child.
 
   3. Method
-    The method focuses on exploring the policy’s impact by regression analysis. Combining 
+
+     The method focuses on exploring the policy’s impact by regression analysis. Combining 
 exploratory data analysis, we first use the OFCOM binary variable to express “post” (OFCOM=1) and before 
 (OFCOM=0) the policy and extract observations aged 16-45 with children (child=1) as treatment group 
 (treated=1). Then, we regress log_consumption on selected variables along with the interaction term (post × 
@@ -39,8 +43,9 @@ consumption, while the interaction coefficient measures the effect in the treatm
 coefficient of “post” measures the total difference before and after the policy. Correlated variables are added 
 to the model as covariates.
 
-  4.Implementation: 
-4.1Data Exploration: The data exploration section of this report aims to investigate the structure of the data 
+  4. Implementation:
+
+     4.1Data Exploration: The data exploration section of this report aims to investigate the structure of the data 
 and identify key characteristics within the sample. This is achieved through correlation matrices, visualizations 
 and summary statistics. To better understand our data set, it is crucial to understand the characteristics that 
 define the individuals in our sample. To do so, we evaluated the age distribution of the households within the 
@@ -82,8 +87,9 @@ Figure 2: Variable Correlation Matrix. <img width="489" height="475" alt="image"
 
 
                                     
-  5. Evaluation: 
-a) R-squared: In this analysis, the adjusted R^2 values are 0.019 and 0.116 for the first and second models, 
+  5. Evaluation:
+
+     a) R-squared: In this analysis, the adjusted R^2 values are 0.019 and 0.116 for the first and second models, 
 respectively. The higher adjusted R^2 of the second model indicates that the expanded version, which includes 
 more predictors, provides a better fit to the data. While these values are low, it is essential to note that in 
 inference-focused studies, the primary goal is to understand the relationships between variables rather than to 
@@ -120,8 +126,9 @@ supports the assumption that any post-2007 differences in the treated group rela
 reasonably be attributed to the policy implementation, allowing us to proceed with the DiD analysis with 
 confidence.
 
-  6. Interpretation: 
-Our research suggests that the Ofcom policy, aimed at reducing children's exposure to and consumption of 
+  6. Interpretation:
+
+     Our research suggests that the Ofcom policy, aimed at reducing children's exposure to and consumption of 
 unhealthy foods through advertising restrictions, was not remarkably effective. The data indicates that 
 consumption habits remained essentially unchanged; only a 4% decrease at 0.05 significant level was registered. 
 This implies that advertising may not be the most influential factor in children’s dietary choices. Future policies 
@@ -143,7 +150,7 @@ Figure A3: Age Distribution <img width="563" height="603" alt="image" src="https
 
 Figure A4: Percentage of OFCOM and Non-OFCOM observations <img width="643" height="656" alt="image" src="https://github.com/user-attachments/assets/12589c75-6066-46fa-935d-b8bb1288f9d9" />
 
-9. References: 
+8. References: 
 Adams, Jean, et al. “Effect of Restrictions on Television Food Advertising to Children on Exposure to 
 Advertisements for ‘Less Healthy’ Foods: Repeat Cross-Sectional Study.” PLOS ONE, vol. e31578, no. 2, 15 
 Feb. 2012.  
